@@ -18,7 +18,7 @@
                         arguments: {
                             JSON: {
                                 type: Scratch.ArgumentType.STRING,
-                                defaultValue: '{"name":"Skye","age":15}'
+                                defaultValue: '{"name":"FirstVarInJson","name":"SecVarInJson"}'
                             },
                             VARIABLE: {
                                 type: Scratch.ArgumentType.STRING,
@@ -34,34 +34,55 @@
             try {
                 const json = JSON.parse(args.JSON);
                 const variable = String(args.VARIABLE);
+                const results = [];
 
-                // Only access normal object properties
-                if (
-                    json !== null &&
-                    typeof json === "object" &&
-                    Object.prototype.hasOwnProperty.call(json, variable)
-                ) {
-                    const value = json[variable];
-
-                    // Convert objects/arrays back into JSON
-                    if (typeof value === "object" && value !== null) {
-                        return JSON.stringify(value);
+                function search(value) {
+                    // Search through arrays
+                    if (Array.isArray(value)) {
+                        for (const item of value) {
+                            search(item);
+                        }
+                        return;
                     }
 
-                    // Convert other values to Scratch-friendly strings
-                    if (value === null) {
-                        return "null";
-                    }
+                    // Search through objects
+                    if (value !== null && typeof value === "object") {
+                        for (const key of Object.keys(value)) {
 
-                    return String(value);
+                            // Found the requested variable
+                            if (key === variable) {
+                                const found = value[key];
+
+                                if (
+                                    typeof found === "object" &&
+                                    found !== null
+                                ) {
+                                    results.push(JSON.stringify(found));
+                                } else if (found === null) {
+                                    results.push("null");
+                                } else {
+                                    results.push(String(found));
+                                }
+                            }
+
+                            // Continue searching nested objects
+                            search(value[key]);
+                        }
+                    }
                 }
 
-                return "";
+                search(json);
+
+                // Multiple matches are separated by ", "
+                return results.join(", ");
+
             } catch (error) {
+                // Invalid JSON
                 return "";
             }
         }
     }
 
     Scratch.extensions.register(new JSONValueExtension());
+
 })(Scratch);
